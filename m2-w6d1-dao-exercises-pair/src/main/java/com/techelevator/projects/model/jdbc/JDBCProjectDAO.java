@@ -1,5 +1,6 @@
 package com.techelevator.projects.model.jdbc;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,8 +65,15 @@ public class JDBCProjectDAO implements ProjectDAO {
 		String addEmployee = "UPDATE project_employee SET project_id=? WHERE employee_id=?";
 		
 		jdbcTemplate.update(addEmployee, projectId, employeeId);
-		
-		
+			
 	}
-
+	public Project createProject(String name) {
+		
+		Project theProject = new Project();
+		theProject.setName(name);	
+		String insertProject = "INSERT INTO project (name) VALUES (?) RETURNING project_id";
+		theProject.setId(jdbcTemplate.queryForObject(insertProject,Long.class, name));
+		
+		return theProject;
+	}
 }

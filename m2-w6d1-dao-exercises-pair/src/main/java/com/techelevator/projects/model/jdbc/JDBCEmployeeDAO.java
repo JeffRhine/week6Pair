@@ -1,5 +1,6 @@
 package com.techelevator.projects.model.jdbc;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,12 +62,12 @@ public class JDBCEmployeeDAO implements EmployeeDAO {
 
 	@Override
 	public List<Employee> getEmployeesByDepartmentId(long id) {
-			List<Employee> theEmployee = new ArrayList<>();
-			String findById = "SELECT department_id " + "FROM employee "  + "WHERE department_id=?";
+			ArrayList<Employee> theEmployee = new ArrayList<>();
+			String findById = "SELECT * FROM employee WHERE department_id=?";
 			SqlRowSet results = jdbcTemplate.queryForRowSet(findById, id);
 			while(results.next()) {
-				Long idS = results.getLong("department_id");
-				theEmployee.add(mapRowToEmployee(results));
+				Employee employee = mapRowToEmployee(results);
+				theEmployee.add(employee);
 			}
 			return theEmployee; 
 		}
@@ -102,5 +103,18 @@ public class JDBCEmployeeDAO implements EmployeeDAO {
 		
 		
 	}
-
+	public Employee createEmployee(String firstName, String lastName, LocalDate birthDate , char gender, LocalDate hireDate) {
+	
+		Employee theEmployee = new Employee();
+		theEmployee.setFirstName(firstName);
+		theEmployee.setLastName(lastName);
+		theEmployee.setBirthDay(birthDate);
+		theEmployee.setGender(gender);
+		theEmployee.setHireDate(hireDate);
+		
+		String insertEmployee = "INSERT INTO employee (first_name,last_name,birth_date,hire_date,gender) VALUES (?,?,?,?,?) RETURNING employee_id";
+		theEmployee.setId(jdbcTemplate.queryForObject(insertEmployee,Long.class, firstName,lastName,birthDate,gender,hireDate));
+		
+		return theEmployee;
+	}
 }
