@@ -46,27 +46,16 @@ public class JDBCProjectDAO implements ProjectDAO {
 
 
 	@Override
-	public void removeEmployeeFromProject(Long projectId, Long employeeId) { //WHY WHY WHY!!!!!!!!!!!!!!!!!!!
-		
-			
-			String removeEmployee = "DELETE FROM project_employee WHERE project_id =? AND employee_id =? "  ;
-			
-			jdbcTemplate.update(removeEmployee, projectId, employeeId);
-			
-			
+	public void removeEmployeeFromProject(Long projectId, Long employeeId) {			
+			String removeEmployee = "DELETE FROM project_employee WHERE project_id =? AND employee_id =? "  ;			
+			jdbcTemplate.update(removeEmployee, projectId, employeeId);			
 		}
-
-		
-	
-
 	@Override
-	public void addEmployeeToProject(Long projectId, Long employeeId) {
-		
-		String addEmployee = "UPDATE project_employee SET project_id=? WHERE employee_id=?";
-		
-		jdbcTemplate.update(addEmployee, projectId, employeeId);
-			
+	public void addEmployeeToProject(Long projectId, Long employeeId) {		
+		String addEmployee = "INSERT INTO project_employee  (project_id,employee_id) Values (?,?)";	
+		jdbcTemplate.update(addEmployee, projectId, employeeId);			
 	}
+	@Override
 	public Project createProject(String name) {
 		
 		Project theProject = new Project();
@@ -75,5 +64,30 @@ public class JDBCProjectDAO implements ProjectDAO {
 		theProject.setId(jdbcTemplate.queryForObject(insertProject,Long.class, name));
 		
 		return theProject;
+	}
+	@Override
+	public List<Employee> getAllEmployeesForProject (Long projectId){
+		List<Employee> theEmployee = new ArrayList<>();
+		String findById = "SELECT * FROM employee e JOIN project_employee pe ON pe.employee_id = e.employee_id WHERE pe.project_id =?";
+		SqlRowSet results = jdbcTemplate.queryForRowSet(findById, projectId);
+		while(results.next()) {
+			//Long idS = results.getLong("project_id");
+			theEmployee.add(mapRowToEmployee(results));
+		}
+		return theEmployee; 
+	}
+	private Employee mapRowToEmployee(SqlRowSet employeeNextRow) {
+		Employee theEmployee;
+		theEmployee = new Employee();
+		theEmployee.setId(employeeNextRow.getLong("employee_id"));
+		theEmployee.setFirstName(employeeNextRow.getString("first_name"));
+		theEmployee.setLastName(employeeNextRow.getString("last_name"));
+		theEmployee.setGender(employeeNextRow.getString("gender").charAt(0));
+		theEmployee.setBirthDay(employeeNextRow.getDate("birth_date").toLocalDate());
+		theEmployee.setHireDate(employeeNextRow.getDate("hire_date").toLocalDate());
+		theEmployee.setDepartmentId(employeeNextRow.getLong("department_id"));
+		
+		
+		return theEmployee;
 	}
 }

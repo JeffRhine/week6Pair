@@ -25,6 +25,8 @@ public class JDBCEmployeeDAOTest {
 	private JDBCEmployeeDAO dao;
 	private JdbcTemplate jdbcTemplate;
 	private long tempId;
+	private long departmentId;
+	private long projectId;
 	/* Before any tests are run, this method initializes the datasource for testing. */
 	@BeforeClass
 	public static void setupDataSource() {
@@ -52,10 +54,13 @@ public class JDBCEmployeeDAOTest {
 		jdbcTemplate.update("DELETE FROM project_employee");
 		jdbcTemplate.update("DELETE FROM employee");
 		jdbcTemplate.update("DELETE FROM department");
+		jdbcTemplate.update("DELETE FROM project");
+		departmentId = jdbcTemplate.queryForObject("INSERT INTO department (name) VALUES ('TEST DEPT') RETURNING department_id",Long.class);
+		projectId = jdbcTemplate.queryForObject("INSERT INTO project (name) VALUES ('TEST PROJECT') RETURNING project_id",Long.class);
 		dao = new JDBCEmployeeDAO(dataSource);//fresh new dao before every test
-		jdbcTemplate.execute("INSERT INTO employee (last_name, first_name, birth_date, gender, hire_date) VALUES ('Wayne','John','1919-04-06','M','1945-07-04') ");
+		jdbcTemplate.update("INSERT INTO employee (department_id,last_name, first_name, birth_date, gender, hire_date) VALUES (?,'Wayne','John','1919-04-06','M','1945-07-04') ",departmentId);
 		tempId=jdbcTemplate.queryForObject("INSERT INTO employee (last_name, first_name, birth_date, gender, hire_date) VALUES ('Wayne','John','1919-04-06','M','1945-07-04') RETURNING employee_id" ,Long.class);
-		jdbcTemplate.update("INSERT INTO project_employee (project_id,employee_id) VALUES (1,?)",tempId);
+		jdbcTemplate.update("INSERT INTO project_employee (project_id,employee_id) VALUES (?,?)",projectId,tempId);
 	}
 
 	/* After each test, we rollback any changes that were made to the database so that
@@ -74,7 +79,6 @@ public class JDBCEmployeeDAOTest {
 		assertEquals('M',employees.get(0).getGender());
 		assertEquals(LocalDate.parse("1919-04-06"),employees.get(0).getBirthDay());
 		assertEquals(LocalDate.parse("1945-07-04"),employees.get(0).getHireDate());
-
 	}
 
 	@Test
@@ -91,42 +95,34 @@ public class JDBCEmployeeDAOTest {
 		List<Employee> employees = dao.getAllEmployees();
 		assertNotNull(employees);
 		assertEquals(2,employees.size());
-		assertEquals(0,employees.get(0).getDepartmentId());
+		assertEquals(departmentId,employees.get(0).getDepartmentId());
 	}
 
 	@Test
 	public void testGetEmployeesWithoutProjects() {
-		fail("Not yet implemented");
+		List<Employee> employees = dao.getEmployeesWithoutProjects();
+		assertNotNull(employees);
+		assertEquals(1,employees.size());
+		assertEquals("John",employees.get(0).getFirstName());
+		assertEquals("Wayne",employees.get(0).getLastName());
 	}
 
 	@Test
 	public void testGetEmployeesByProjectId() {
-		List<Employee> employees = dao.getAllEmployees();
-		SqlRowSet getEP = jdbcTemplate.queryForObject("SELECT last_name,first_name FROM project_employee WHERE project_id=1");
+		List<Employee> employees = dao.getEmployeesByProjectId(projectId);
 		assertNotNull(employees);
-		assertEquals(2,employees.size());
-		assertEquals(getEP,employees.get(1));
+		assertEquals(1,employees.size());
+		assertEquals("John",employees.get(0).getFirstName());
+		assertEquals("Wayne",employees.get(0).getLastName());
 	}
 
 	@Test
 	public void testChangeEmployeeDepartment() {
-		fail("Not yet implemented");
+		 dao.changeEmployeeDepartment(tempId, departmentId);;
+		 List<Employee> employees = dao.getAllEmployees();
+			assertNotNull(employees);
+			assertEquals(2,employees.size());
+		assertEquals(departmentId,employees.get(1).getDepartmentId());
 	}
-//	private Employee getEmployee(String first_name, String last_name, LocalDate birth_date , char gender, LocalDate hire_date) {
-//		Employee theEmployee = new Employee();
-//		theEmployee.setFirstName(first_name);
-//		theEmployee.setLastName(last_name);
-//		theEmployee.setBirthDay(birth_date);
-//		theEmployee.setGender(gender);
-//		theEmployee.setHireDate(hire_date);
-//		return theEmployee;
-//	}
-//	private void assertEmployeesAreEqual(Employee expected, Employee actual) {
-//		assertEquals(expected.getId(), actual.getId());
-//		assertEquals(expected.getFirstName(), actual.getFirstName());
-//		assertEquals(expected.getLastName(), actual.getLastName());
-//		assertEquals(expected.getBirthDay(), actual.getBirthDay());
-//		assertEquals(expected.getGender(), actual.getGender());
-//		assertEquals(expected.getHireDate(), actual.getHireDate());
-//	}
+
 }

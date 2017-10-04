@@ -9,4 +9,8 @@ public interface ProjectDAO {
 	public void removeEmployeeFromProject(Long projectId, Long employeeId);
 
 	public void addEmployeeToProject(Long projectId, Long employeeId);
+	
+	public Project createProject(String name) ;
+	
+	public List<Employee> getAllEmployeesForProject (Long projectId);
 }
